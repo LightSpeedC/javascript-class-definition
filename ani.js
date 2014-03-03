@@ -227,6 +227,7 @@ function Dog(name) {
 Dog.prototype = {
   introduce: function introduce() {
     console.log('私は ' + this.constructor.name + ' の ' + this.name + ' です。');
+  }
 };
 
 // Dog クラスのインスタンスオブジェクトの作成と利用
@@ -260,14 +261,14 @@ verifyClassObject(e1, ['e1', Elephant, Animal, Object]);
 
 console.log('---- Fox ----');
 
-// 正しい継承
-Fox.prototype = Object.create(Animal.prototype);
-Fox.prototype.constructor = Fox;
-
 // Fox クラス定義
 function Fox(name) {
   Animal.call(this, name);
 }
+
+// 正しい継承
+Fox.prototype = Object.create(Animal.prototype);
+Fox.prototype.constructor = Fox;
 
 // Fox クラスのインスタンスオブジェクトの作成と利用
 var f1 = new Fox('Gon');
@@ -281,9 +282,6 @@ verifyClassObject(f1, ['f1', Fox, Animal, Object]);
 
 
 console.log('---- Gorilla ----');
-
-// 正しい継承
-inherits(Gorilla, Animal);
 
 // Gorilla クラス定義
 function Gorilla(name) {
@@ -303,6 +301,9 @@ function inherits(ctor, superCtor) {
   });
 }
 
+// 正しい継承
+inherits(Gorilla, Animal);
+
 // Gorilla クラスのインスタンスオブジェクトの作成と利用
 var g1 = new Gorilla('Kong');
 g1.introduce();
@@ -311,6 +312,30 @@ g1.introduce();
 // g1 >> Gorilla >> Animal >> Object かどうか検証してみる
 verifyClassObject(g1, ['g1', Gorilla, Animal, Object]);
 // -> g1 >> Gorilla >> Animal >> Object
+
+
+var a1 = new Animal('Annie');
+a1.introduce();        // -> 私は Animal の Annie です。
+console.log(a1.name);  // -> Annie
+a1.name = 'Aho';
+a1.introduce();        // -> 私は Animal の Aho です。
+console.log(a1.name);  // -> Aho
+
+
+// Animal クラス定義
+function Animal(name) {
+  this.introduce = function introduce() {
+    console.log('私は ' + this.constructor.name + ' の ' + name + ' です。');
+  };
+}
+
+
+var a1 = new Animal('Annie');
+a1.introduce();        // -> 私は Animal の Annie です。
+console.log(a1.name);  // -> undefined
+a1.name = 'Aho';
+a1.introduce();        // -> 私は Animal の Annie です。
+console.log(a1.name);  // -> Aho
 
 
   // http://news.mynavi.jp/articles/2010/09/09/ie9-ie8-getter-setter-javascript/
