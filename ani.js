@@ -1,5 +1,30 @@
 'use strict';
 
+// 互換性対応のおまじない。主に IE。
+
+// Object.prototype.__defineGetter__ 定義
+if (!Object.prototype.__defineGetter__ && Object.defineProperty)
+  Object.defineProperty(Object.prototype, '__defineGetter__', {
+    value: function (name, func) {
+      Object.defineProperty(this, name,
+        {get: func, enumerable: true, configurable: true});
+    }, enumerable: false, configurable: true});
+
+// Object.prototype.__defineSetter__ 定義
+if (!Object.prototype.__defineSetter__ && Object.defineProperty)
+  Object.defineProperty(Object.prototype, '__defineSetter__', {
+    value: function (name, func) {
+      Object.defineProperty(this, name,
+        {set: func, enumerable: true, configurable: true});
+    }, enumerable: false, configurable: true});
+
+// Function.prototype.name 定義
+if (!('name' in Function.prototype))
+  Function.prototype.__defineGetter__('name', function () {
+    return ('' + this).replace(/^\s*function\s*([^\(]*)[\S\s]+$/im, '$1');
+  });
+
+
 console.log('---- Object ----');
 
 var obj1 = {x: 12, y: "ab"};
@@ -15,11 +40,6 @@ console.log(obj2 instanceof Object);  // -> true
 console.log(obj3 instanceof Object);  // -> true
 console.log(obj4 instanceof Object);  // -> true
 
-console.log(obj1.constructor.name);  // -> Object
-console.log(obj2.constructor.name);  // -> Object
-console.log(obj3.constructor.name);  // -> Array
-console.log(obj4.constructor.name);  // -> Array
-
 console.log(obj1.constructor === Object);  // -> true
 console.log(obj2.constructor === Object);  // -> true
 console.log(obj3.constructor === Array);   // -> true
@@ -29,6 +49,40 @@ console.log(obj1 instanceof Array);  // -> false
 console.log(obj2 instanceof Array);  // -> false
 console.log(obj3 instanceof Array);  // -> true
 console.log(obj4 instanceof Array);  // -> true
+
+console.log(obj1.constructor.name);  // -> Object
+console.log(obj2.constructor.name);  // -> Object
+console.log(obj3.constructor.name);  // -> Array
+console.log(obj4.constructor.name);  // -> Array
+
+
+
+var x1 = {w: 10, h: 20, calc: function () { return this.w * this.h; }};
+var x2 = {w: 20, h: 30, calc: function () { return this.w * this.h; }};
+
+console.log(x1.calc());            // -> 200
+console.log(x2.calc());            // -> 600
+console.log(x1.calc === x2.calc);  // -> false
+console.log(x1.calc.toString() === x2.calc.toString());  // -> true
+
+
+function calc() {
+  return this.w * this.h;
+}
+
+var x3 = {w: 10, h: 20, calc: calc};
+var x4 = {w: 20, h: 30, calc: calc};
+
+console.log(x3.calc());            // -> 200
+console.log(x4.calc());            // -> 600
+console.log(x3.calc === x4.calc);  // -> true
+
+
+var x5 = {w: 10, h: 20, get area() { return this.w * this.h; }};
+var x6 = {w: 20, h: 30, get area() { return this.w * this.h; }};
+
+console.log(x5.area);            // -> 200
+console.log(x6.area);            // -> 600
 
 
 
@@ -40,12 +94,9 @@ function Animal(name) {
 }
 
 // Animal クラスのメソッド定義
-Animal.prototype.introduce = introduce;
-
-// 自己紹介
-function introduce() {
+Animal.prototype.introduce = function introduce() {
   console.log('私は ' + this.constructor.name + ' の ' + this.name + ' です。');
-}
+};
 
 // Animal クラスのインスタンスオブジェクトの作成と利用
 var a1 = new Animal('Annie');
@@ -173,7 +224,10 @@ function Dog(name) {
 }
 
 // ところで prototype オブジェクトを上書きしていいの?
-Dog.prototype = { introduce: introduce };
+Dog.prototype = {
+  introduce: function introduce() {
+    console.log('私は ' + this.constructor.name + ' の ' + this.name + ' です。');
+};
 
 // Dog クラスのインスタンスオブジェクトの作成と利用
 var d1 = new Dog('Hachi');
@@ -259,9 +313,35 @@ verifyClassObject(g1, ['g1', Gorilla, Animal, Object]);
 // -> g1 >> Gorilla >> Animal >> Object
 
 
-function getFunctionName(fn) {
-  return !fn ? fn : 'name' in fn ? fn.name :
-    fn.name = ('' + fn).replace(/^\s*function\s*([^\(]*)[\S\s]+$/im, '$1');
-}
+  // http://news.mynavi.jp/articles/2010/09/09/ie9-ie8-getter-setter-javascript/
+  // emulate legacy getter/setter API using ES5 APIs
+  if (!Object.prototype.__defineGetter__ && Object.defineProperty)
+    Object.defineProperty(Object.prototype, '__defineGetter__', {
+      value: function (name, func) {
+        Object.defineProperty(this, name,
+          {get: func, enumerable: true, configurable: true});
+      }, enumerable: false, configurable: true});
+  if (!Object.prototype.__defineSetter__ && Object.defineProperty)
+    Object.defineProperty(Object.prototype, '__defineSetter__', {
+      value: function (name, func) {
+        Object.defineProperty(this, name,
+          {set: func, enumerable: true, configurable: true});
+      }, enumerable: false, configurable: true});
 
-//Object.defineProperty(Function.prototype, "name", {});
+  // http://subtech.g.hatena.ne.jp/mayuki/20131212/1386864073
+  if (!Object.prototype.__defineGetter__ && Object.defineProperty)
+    Object.defineProperty(Object.prototype, '__defineGetter__', {
+      value: function (name, func) {
+        var propDesc = Object.getOwnPropertyDescriptor(this) || {};
+        propDesc.configurable = true;
+        propDesc.get = func;
+        Object.defineProperty(this, name, propDesc);
+      }, enumerable: false, configurable: true});
+  if (!Object.prototype.__defineSetter__ && Object.defineProperty)
+    Object.defineProperty(Object.prototype, '__defineSetter__', {
+      value: function (name, func) {
+        var propDesc = Object.getOwnPropertyDescriptor(this) || {};
+        propDesc.configurable = true;
+        propDesc.set = func;
+        Object.defineProperty(this, name, propDesc);
+      }, enumerable: false, configurable: true});
