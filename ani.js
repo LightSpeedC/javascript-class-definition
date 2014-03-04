@@ -115,10 +115,20 @@ function assertTrue(bool, msg) {
 }
 
 // verifyClassObject: オブジェクトの検証
-function verifyClassObject(obj, expected) {
+function verifyClassObject(obj, expected, keysExpected) {
   var name       = expected[0];
   var Class      = expected[1];
   var SuperClass = expected[2];
+
+  var keys = [];
+  for (var i in obj)
+    keys.push(i);
+  var keysActual = keys.join(',');
+  if (keysActual === keysExpected)
+    console.log(GREEN + 'Success: keys = ' + keysActual + NORMAL);
+  else
+    console.log(RED + 'Error: keys = ' + keysActual + ', ' + NORMAL +
+      YELLOW + 'Expected: keys ' + keysExpected + NORMAL);
 
   // obj は Class のインスタンスだ (new Class で作成したからね)
   assertTrue(obj instanceof Class,
@@ -174,7 +184,7 @@ function verifyClassObject(obj, expected) {
 }
 
 // a1 >> Animal >> Object かどうか検証してみる
-verifyClassObject(a1, ['a1', Animal, Object]);
+verifyClassObject(a1, ['a1', Animal, Object], 'name,introduce');
 // -> a1 >> Animal >> Object
 
 
@@ -193,7 +203,7 @@ var b1 = new Bear('Pooh');
 b1.introduce();  // -> 私は Animal の Pooh です。
 
 // b1 >> Bear >> Animal >> Object かどうか検証してみる
-verifyClassObject(b1, ['b1', Bear, Animal, Object]);
+verifyClassObject(b1, ['b1', Bear, Animal, Object], 'name,introduce');
 // -> b1 >> Animal >> Object
 
 
@@ -212,7 +222,7 @@ var c1 = new Cat('Kitty');
 c1.introduce();  // -> 私は Animal の Kitty です。
 
 // c1 >> Cat >> Animal >> Object かどうか検証してみる
-verifyClassObject(c1, ['c1', Cat, Animal, Object]);
+verifyClassObject(c1, ['c1', Cat, Animal, Object], 'name,introduce');
 // -> c1 >> Animal >> Animal >> Object
 
 
@@ -223,11 +233,10 @@ function Dog(name) {
   this.name = name;
 }
 
-// ところで prototype オブジェクトを上書きしていいの?
+// 無理やり constructor と __proto__ を使って prototype オブジェクトを上書きする
 Dog.prototype = {
-  introduce: function introduce() {
-    console.log('私は ' + this.constructor.name + ' の ' + this.name + ' です。');
-  }
+  constructor: Dog,
+  __proto__: Animal.prototype
 };
 
 // Dog クラスのインスタンスオブジェクトの作成と利用
@@ -235,27 +244,27 @@ var d1 = new Dog('Hachi');
 d1.introduce();  // -> 私は Object の Hachi です。
 
 // d1 >> Dog >> Animal >> Object かどうか検証してみる
-verifyClassObject(d1, ['d1', Dog, Object]);
-// -> d1 >> Object >> Object
+verifyClassObject(d1, ['d1', Dog, Animal, Object], 'name,introduce');
+// -> d1 >> Dog >> Animal >> Object
 
 
 
 console.log('---- Elephant ----');
-
-// 結果は正しいけど互換性が無い継承
-Elephant.prototype.__proto__ = Animal.prototype;
 
 // Elephant クラス定義
 function Elephant(name) {
   Animal.call(this, name);
 }
 
+// 結果は正しいけど互換性が無い継承
+Elephant.prototype.__proto__ = Animal.prototype;
+
 // Elephant クラスのインスタンスオブジェクトの作成と利用
 var e1 = new Elephant('Dumbo');
 e1.introduce();  // -> 私は Elephant の Dumbo です。
 
 // e1 >> Elephant >> Animal >> Object かどうか検証してみる
-verifyClassObject(e1, ['e1', Elephant, Animal, Object]);
+verifyClassObject(e1, ['e1', Elephant, Animal, Object], 'name,introduce');
 // -> e1 >> Elephant >> Animal >> Object
 
 
@@ -275,7 +284,7 @@ var f1 = new Fox('Gon');
 f1.introduce();  // -> 私は Fox の Gon です。
 
 // f1 >> Fox >> Animal >> Object かどうか検証してみる
-verifyClassObject(f1, ['f1', Fox, Animal, Object]);
+verifyClassObject(f1, ['f1', Fox, Animal, Object], 'name,introduce');
 // -> f1 >> Fox >> Animal >> Object
 
 // console.log(Object.keys(f1));
@@ -310,7 +319,7 @@ g1.introduce();
 // -> 私は Gorilla の Kong です。
 
 // g1 >> Gorilla >> Animal >> Object かどうか検証してみる
-verifyClassObject(g1, ['g1', Gorilla, Animal, Object]);
+verifyClassObject(g1, ['g1', Gorilla, Animal, Object], 'name,introduce');
 // -> g1 >> Gorilla >> Animal >> Object
 
 
@@ -322,20 +331,41 @@ a1.introduce();        // -> 私は Animal の Aho です。
 console.log(a1.name);  // -> Aho
 
 
-// Animal クラス定義
-function Animal(name) {
+// Animal2 クラス定義
+function Animal2(name) {
   this.introduce = function introduce() {
     console.log('私は ' + this.constructor.name + ' の ' + name + ' です。');
   };
 }
 
 
-var a1 = new Animal('Annie');
-a1.introduce();        // -> 私は Animal の Annie です。
+var a1 = new Animal2('Annie');
+a1.introduce();        // -> 私は Animal2 の Annie です。
 console.log(a1.name);  // -> undefined
 a1.name = 'Aho';
-a1.introduce();        // -> 私は Animal の Annie です。
+a1.introduce();        // -> 私は Animal2 の Annie です。
 console.log(a1.name);  // -> Aho
+
+
+
+function Animal3(name) {
+  this.name = name;
+  this.animalProp = 123;
+}
+
+Animal3.prototype.animalCommonProp = 'abc';
+
+var a1 = new Animal3('Annie');
+console.log(a1.animalProp + ' ' + a1.animalCommonProp);
+// -> 123 abc
+a1.animalProp = 456;
+a1.animalCommonProp = 'xyz';
+console.log(a1.animalProp + ' ' + a1.animalCommonProp);
+// -> 456 xyz
+delete a1.animalProp;
+delete a1.animalCommonProp;
+console.log(a1.animalProp + ' ' + a1.animalCommonProp);
+// -> undefined abc
 
 
   // http://news.mynavi.jp/articles/2010/09/09/ie9-ie8-getter-setter-javascript/
