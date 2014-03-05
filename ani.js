@@ -275,7 +275,6 @@ function Fox(name) {
   Animal.call(this, name);
 }
 
-// 正しい継承
 Fox.prototype = Object.create(Animal.prototype);
 Fox.prototype.constructor = Fox;
 
@@ -322,50 +321,69 @@ g1.introduce();
 verifyClassObject(g1, ['g1', Gorilla, Animal, Object], 'name,introduce');
 // -> g1 >> Gorilla >> Animal >> Object
 
+console.log('----');
 
-var a1 = new Animal('Annie');
-a1.introduce();        // -> 私は Animal の Annie です。
-console.log(a1.name);  // -> Annie
-a1.name = 'Aho';
-a1.introduce();        // -> 私は Animal の Aho です。
-console.log(a1.name);  // -> Aho
-
+try {
+  var a2 = Animal('Annie');
+} catch (err) {
+  console.log(RED + err + NORMAL);
+}
 
 // Animal2 クラス定義
 function Animal2(name) {
+  if (!(this instanceof Animal2))
+    return new Animal2(name);
+  this.name = name;
+}
+
+var a2 = Animal2('Annie');
+
+
+
+var a3 = new Animal('Annie');
+a3.introduce();        // -> 私は Animal の Annie です。
+console.log(a3.name);  // -> Annie
+a3.name = 'Aho';
+a3.introduce();        // -> 私は Animal の Aho です。
+console.log(a3.name);  // -> Aho
+
+
+// Animal3 クラス定義
+function Animal3(name) {
   this.introduce = function introduce() {
     console.log('私は ' + this.constructor.name + ' の ' + name + ' です。');
   };
 }
 
-
-var a1 = new Animal2('Annie');
-a1.introduce();        // -> 私は Animal2 の Annie です。
-console.log(a1.name);  // -> undefined
-a1.name = 'Aho';
-a1.introduce();        // -> 私は Animal2 の Annie です。
-console.log(a1.name);  // -> Aho
-
+var a3 = new Animal3('Annie');
+a3.introduce();        // -> 私は Animal3 の Annie です。
+console.log(a3.name);  // -> undefined
+a3.name = 'Aho';
+a3.introduce();        // -> 私は Animal3 の Annie です。
+console.log(a3.name);  // -> Aho
 
 
-function Animal3(name) {
+
+// Animal4 クラス定義
+function Animal4(name) {
   this.name = name;
   this.animalProp = 123;
 }
 
-Animal3.prototype.animalCommonProp = 'abc';
+Animal4.prototype.animalCommonProp = 'abc';
 
-var a1 = new Animal3('Annie');
-console.log(a1.animalProp + ' ' + a1.animalCommonProp);
+var a4 = new Animal4('Annie');
+console.log(a4.animalProp + ' ' + a4.animalCommonProp);
 // -> 123 abc
-a1.animalProp = 456;
-a1.animalCommonProp = 'xyz';
-console.log(a1.animalProp + ' ' + a1.animalCommonProp);
+a4.animalProp = 456;
+a4.animalCommonProp = 'xyz';
+console.log(a4.animalProp + ' ' + a4.animalCommonProp);
 // -> 456 xyz
-delete a1.animalProp;
-delete a1.animalCommonProp;
-console.log(a1.animalProp + ' ' + a1.animalCommonProp);
+delete a4.animalProp;
+delete a4.animalCommonProp;
+console.log(a4.animalProp + ' ' + a4.animalCommonProp);
 // -> undefined abc
+
 
 
   // http://news.mynavi.jp/articles/2010/09/09/ie9-ie8-getter-setter-javascript/
