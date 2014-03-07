@@ -111,7 +111,7 @@ var YELLOW = typeof window !== 'undefined' ? '' : CSI + '33m';
 
 // assertTrue: true であればOK、false の時はエラーメッセージを表示する
 function assertTrue(bool, msg) {
-  if (!bool) console.log(RED + 'Error: ' + msg + NORMAL);
+  if (!bool) console.error(RED + 'Error: ' + msg + NORMAL);
 }
 
 // verifyClassObject: オブジェクトの検証
@@ -125,9 +125,9 @@ function verifyClassObject(obj, expected, keysExpected) {
     keys.push(i);
   var keysActual = keys.join(',');
   if (keysActual === keysExpected)
-    console.log(GREEN + 'Success: keys = ' + keysActual + NORMAL);
+    console.info(GREEN + 'Success: keys = ' + keysActual + NORMAL);
   else
-    console.log(RED + 'Error: keys = ' + keysActual + ', ' + NORMAL +
+    console.error(RED + 'Error: keys = ' + keysActual + ', ' + NORMAL +
       YELLOW + 'Expected: keys ' + keysExpected + NORMAL);
 
   // obj は Class のインスタンスだ (new Class で作成したからね)
@@ -135,7 +135,7 @@ function verifyClassObject(obj, expected, keysExpected) {
     name + ' は ' + Class.name + ' のインスタンスではない。');
 
   // obj は SuperClass のインスタンスでもある
-  assertTrue(obj instanceof SuperClass,
+  if (SuperClass) assertTrue(obj instanceof SuperClass,
     name + ' は ' + SuperClass.name + ' のインスタンスではない。');
 
   // obj は Object のインスタンスでもある
@@ -158,7 +158,7 @@ function verifyClassObject(obj, expected, keysExpected) {
     Class.name + ' ではない。');
 
   // Class は SuperClass を継承しているんだね
-  assertTrue(obj.__proto__.__proto__ === SuperClass.prototype &&
+  if (SuperClass) assertTrue(obj.__proto__.__proto__ === SuperClass.prototype &&
     obj.__proto__.__proto__.constructor === SuperClass &&
     Class.prototype.__proto__.constructor === SuperClass,
     name + ' の __proto__ の __proto__ は ' +
@@ -176,16 +176,62 @@ function verifyClassObject(obj, expected, keysExpected) {
 
   var actualString = ancestors.join(' >> ');
   if (actualString === expectedString)
-    console.log(GREEN + 'Success: ' + actualString + NORMAL);
+    console.info(GREEN + 'Success: ' + actualString + NORMAL);
   else
-    console.log(RED + 'Error: ' + actualString + ', ' + NORMAL +
+    console.error(RED + 'Error: ' + actualString + ', ' + NORMAL +
       YELLOW + 'Expected: ' + expectedString + NORMAL);
   // -> name >> Class >> SuperClass >> Object
 }
 
+if (!('info'  in console)) console.info  = console.log;
+if (!('error' in console)) console.error = console.log;
+
+
 // a1 >> Animal >> Object かどうか検証してみる
 verifyClassObject(a1, ['a1', Animal, Object], 'name,introduce');
-// -> a1 >> Animal >> Object
+// -> Success: keys = name,introduce
+// -> Success: a1 >> Animal >> Object
+
+
+verifyClassObject(obj1, ['obj1', Object], 'x,y');
+// -> Success: keys = x,y
+// -> Success: obj1 >> Object
+
+verifyClassObject(obj2, ['obj2', Object], 'x,y');
+// -> Success: keys = x,y
+// -> Success: obj2 >> Object
+
+verifyClassObject(obj3, ['obj3', Array, Object], '0,1');
+// -> Success: keys = 0,1
+// -> Success: obj3 >> Array >> Object
+
+verifyClassObject(obj4, ['obj4', Array, Object], '0,1');
+// -> Success: keys = 0,1
+// -> Success: obj4 >> Array >> Object
+
+verifyClassObject(x1, ['x1', Object], 'w,h,calc');
+// -> Success: keys = w,h,calc
+// -> Success: x1 >> Object
+
+verifyClassObject(x2, ['x2', Object], 'w,h,calc');
+// -> Success: keys = w,h,calc
+// -> Success: x2 >> Object
+
+verifyClassObject(x3, ['x3', Object], 'w,h,calc');
+// -> Success: keys = w,h,calc
+// -> Success: x3 >> Object
+
+verifyClassObject(x4, ['x4', Object], 'w,h,calc');
+// -> Success: keys = w,h,calc
+// -> Success: x4 >> Object
+
+verifyClassObject(x5, ['x5', Object], 'w,h,area');
+// -> Success: keys = w,h,area
+// -> Success: x5 >> Object
+
+verifyClassObject(x6, ['x6', Object], 'w,h,area');
+// -> Success: keys = w,h,area
+// -> Success: x6 >> Object 
 
 
 console.log('---- Bear ----');
@@ -204,7 +250,12 @@ b1.introduce();  // -> 私は Animal の Pooh です。
 
 // b1 >> Bear >> Animal >> Object かどうか検証してみる
 verifyClassObject(b1, ['b1', Bear, Animal, Object], 'name,introduce');
-// -> b1 >> Animal >> Object
+// -> Success: keys = name,introduce
+// -> Error: b1 のコンストラクタは Animal で、 Bear ではない。
+// -> Error: Bear のプロトタイプは Animal で、 Bear ではない。
+// -> Error: b1 の __proto__ は Animal で、 Bear ではない。
+// -> Error: b1 の __proto__ の __proto__ は Object で、 Animal ではない。
+// -> Error: b1 >> Animal >> Object, Expected: b1 >> Bear >> Animal >> Object 
 
 
 console.log('---- Cat ----');
@@ -223,7 +274,12 @@ c1.introduce();  // -> 私は Animal の Kitty です。
 
 // c1 >> Cat >> Animal >> Object かどうか検証してみる
 verifyClassObject(c1, ['c1', Cat, Animal, Object], 'name,introduce');
-// -> c1 >> Animal >> Animal >> Object
+// -> Success: keys = name,introduce
+// -> Error: c1 のコンストラクタは Animal で、 Cat ではない。
+// -> Error: Cat のプロトタイプは Animal で、 Cat ではない。
+// -> Error: c1 の __proto__ は Animal で、 Cat ではない。
+// -> Error: c1 >> Animal >> Animal >> Object, Expected: c1 >> Cat >> Animal >> Object
+
 
 
 console.log('---- Dog ----');
@@ -241,11 +297,12 @@ Dog.prototype = {
 
 // Dog クラスのインスタンスオブジェクトの作成と利用
 var d1 = new Dog('Hachi');
-d1.introduce();  // -> 私は Object の Hachi です。
+d1.introduce();  // -> 私は Dog の Hachi です。
 
 // d1 >> Dog >> Animal >> Object かどうか検証してみる
 verifyClassObject(d1, ['d1', Dog, Animal, Object], 'name,introduce');
-// -> d1 >> Dog >> Animal >> Object
+// -> Error: keys = name,constructor,introduce, Expected: keys name,introduce
+// -> Success: d1 >> Dog >> Animal >> Object
 
 
 
@@ -265,7 +322,8 @@ e1.introduce();  // -> 私は Elephant の Dumbo です。
 
 // e1 >> Elephant >> Animal >> Object かどうか検証してみる
 verifyClassObject(e1, ['e1', Elephant, Animal, Object], 'name,introduce');
-// -> e1 >> Elephant >> Animal >> Object
+// -> Success: keys = name,introduce
+// -> Success: e1 >> Elephant >> Animal >> Object
 
 
 console.log('---- Fox ----');
@@ -284,9 +342,8 @@ f1.introduce();  // -> 私は Fox の Gon です。
 
 // f1 >> Fox >> Animal >> Object かどうか検証してみる
 verifyClassObject(f1, ['f1', Fox, Animal, Object], 'name,introduce');
-// -> f1 >> Fox >> Animal >> Object
-
-// console.log(Object.keys(f1));
+// -> Error: keys = name,constructor,introduce, Expected: keys name,introduce
+// -> Success: f1 >> Fox >> Animal >> Object
 
 
 console.log('---- Gorilla ----');
@@ -319,7 +376,9 @@ g1.introduce();
 
 // g1 >> Gorilla >> Animal >> Object かどうか検証してみる
 verifyClassObject(g1, ['g1', Gorilla, Animal, Object], 'name,introduce');
-// -> g1 >> Gorilla >> Animal >> Object
+// -> Success: keys = name,introduce
+// -> Success: g1 >> Gorilla >> Animal >> Object
+
 
 console.log('----');
 
@@ -383,7 +442,6 @@ delete a4.animalProp;
 delete a4.animalCommonProp;
 console.log(a4.animalProp + ' ' + a4.animalCommonProp);
 // -> undefined abc
-
 
 
   // http://news.mynavi.jp/articles/2010/09/09/ie9-ie8-getter-setter-javascript/
