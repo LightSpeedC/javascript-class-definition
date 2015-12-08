@@ -1,0 +1,26 @@
+{
+  "name": "javascript-class-definition",
+  "version": "0.0.0",
+  "description": "JavaScript Class Definition",
+  "main": "test.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LightSpeedC/javascript-class-definition.git"
+  },
+  "keywords": [
+    "object-oriented",
+    "class-definition"
+  ],
+  "author": "LightSpeedC",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LightSpeedC/javascript-class-definition/issues"
+  },
+  "homepage": "https://github.com/LightSpeedC/javascript-class-definition",
+  "devDependencies": {
+    "mocha": "~1.17.1"
+  }
+}
